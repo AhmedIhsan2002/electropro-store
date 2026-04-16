@@ -201,7 +201,7 @@
                             <h3>{{ $item->product->name }}</h3>
                         </div>
                     </div>
-                    <span class="current">{{ number_format($product->price / 3.75, 2) }} $</span>ر
+                    <span class="current">{{ number_format($item->product->price / 3.75, 2) }} $</span>
                     <div class="quantity-selector">
                         <form action="{{ route('cart.update', $item->id) }}" method="POST" style="display: flex; gap: 5px;">
                             @csrf
@@ -229,7 +229,7 @@
             <h3>ملخص الطلب</h3>
             <div class="summary-row">
                 <span>المجموع الفرعي</span>
-              <span class="current">{{ number_format($product->price / 3.75, 2) }} $</span>
+                <span class="current">{{ number_format($cart->total / 3.75, 2) }} $</span>
             </div>
             <div class="summary-row">
                 <span>الشحن</span>
@@ -237,7 +237,7 @@
             </div>
             <div class="summary-row total">
                 <span>الإجمالي</span>
-                <span>{{ number_format($cart->total + ($cart->total > 500 ? 0 : 25)) }} $</span>
+                <span>{{ number_format(($cart->total + ($cart->total > 500 ? 0 : 25)) / 3.75, 2) }} $</span>
             </div>
             <form action="{{ route('cart.clear') }}" method="POST">
                 @csrf

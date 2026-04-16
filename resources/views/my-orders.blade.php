@@ -47,7 +47,7 @@
                     </thead>
                     <tbody>
                         @foreach($orders as $order)
-                        更好
+                        <tr>
                             <td>{{ $order->order_number }}</td>
                             <td>{{ $order->created_at->format('Y-m-d') }}</td>
                             <td>{{ number_format($order->total) }} ريال</td>

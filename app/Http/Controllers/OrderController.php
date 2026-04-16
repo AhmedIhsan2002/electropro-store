@@ -42,70 +42,67 @@ class OrderController extends Controller
     /**
      * Store new order
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string|max:500',
-            'city' => 'required|string|max:100',
-            'payment_method' => 'required|in:cod,card,bank_transfer',
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'phone' => 'required|string|max:20',
+        'address' => 'required|string|max:500',
+        'city' => 'required|string|max:100',
+        'payment_method' => 'required|in:cod,card,bank_transfer',
+    ]);
 
-        $cart = $this->getCart();
-
-        if (!$cart || $cart->items->count() == 0) {
-            return redirect()->route('cart')->with('error', 'سلة المشتريات فارغة');
-        }
-
-        // Calculate totals
-        $subtotal = $cart->total;
-        $shipping = $subtotal > 500 ? 0 : 25;
-        $total = $subtotal + $shipping;
-
-        // Generate unique order number
-        $orderNumber = 'ORD-' . strtoupper(Str::random(8));
-
-        // Create order with database transaction for data integrity
-        $order = DB::transaction(function () use ($request, $cart, $orderNumber, $subtotal, $shipping, $total) {
-            // Create order
-            $order = Order::create([
-                'order_number' => $orderNumber,
-                'user_id' => Auth::id(),
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'city' => $request->city,
-                'subtotal' => $subtotal,
-                'shipping_cost' => $shipping,
-                'total' => $total,
-                'payment_method' => $request->payment_method,
-                'status' => 'pending',
-                'notes' => $request->notes,
-            ]);
-
-            // Create order items
-            foreach ($cart->items as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                ]);
-            }
-
-            // Clear cart after successful order
-            $cart->items()->delete();
-
-            return $order;
-        });
-
-        return redirect()->route('order.success', $order->id)
-            ->with('success', 'تم إنشاء الطلب بنجاح');
+    // الحصول على السلة
+    if (Auth::check()) {
+        $cart = Cart::where('user_id', Auth::id())->first();
+        $userId = Auth::id();
+    } else {
+        $sessionId = session()->getId();
+        $cart = Cart::where('session_id', $sessionId)->first();
+        $userId = null;  // للزوار غير المسجلين
     }
+
+    if (!$cart || $cart->items->count() == 0) {
+        return redirect()->route('cart')->with('error', 'سلة المشتريات فارغة');
+    }
+
+    $subtotal = $cart->total;
+    $shipping = $subtotal > 500 ? 0 : 25;
+    $total = $subtotal + $shipping;
+    $orderNumber = 'ORD-' . strtoupper(uniqid());
+
+    $order = Order::create([
+        'order_number' => $orderNumber,
+        'user_id' => $userId,  // يمكن أن يكون null للزوار
+        'name' => $request->name,
+        'email' => $request->email,
+        'phone' => $request->phone,
+        'address' => $request->address,
+        'city' => $request->city,
+        'subtotal' => $subtotal,
+        'shipping_cost' => $shipping,
+        'total' => $total,
+        'payment_method' => $request->payment_method,
+        'status' => 'pending',
+        'notes' => $request->notes,
+    ]);
+
+    foreach ($cart->items as $item) {
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $item->product_id,
+            'product_name' => $item->product->name,
+            'quantity' => $item->quantity,
+            'price' => $item->price,
+        ]);
+    }
+
+    $cart->items()->delete();
+
+    return redirect()->route('order.success', $order->id)
+        ->with('success', 'تم إنشاء الطلب بنجاح');
+}
 
     /**
      * Display order success page

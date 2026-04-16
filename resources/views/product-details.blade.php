@@ -516,7 +516,7 @@
                         <div class="product-info">
                             <h3>{{ Str::limit($related->name, 40) }}</h3>
                             <div class="price">
-                                <span class="current">{{ number_format($product->price / 3.75, 2) }} $</span>
+                                <span class="current">{{ number_format($related->price / 3.75, 2) }} $</span>
                             </div>
                             <button class="add-to-cart" onclick="window.location.href='{{ route('product.details', $related->id) }}'">
                                 عرض التفاصيل
